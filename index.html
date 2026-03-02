@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>浪漫情感选择</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", sans-serif; }
+        body {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; background-color: #FFC0CB; /* 粉色背景 */
+            padding: 20px; overflow: hidden; position: relative;
+        }
+        .cartoon-img {
+            width: 220px; height: 220px; margin-bottom: 20px;
+            object-fit: contain; /* 保持图片比例，不拉伸 */
+            z-index: 10;
+        }
+        .question-text { font-size: 24px; color: #333; margin-bottom: 30px; z-index: 10; }
+        .btn-group { display: flex; gap: 30px; z-index: 10; }
+        .choice-btn {
+            padding: 12px 36px; font-size: 18px; border: none;
+            border-radius: 8px; cursor: pointer; transition: all 0.3s ease;
+        }
+        .agree-btn { background-color: #e63946; color: white; --scale: 1; transform: scale(var(--scale)); }
+        .disagree-btn { background-color: #457b9d; color: white; }
+
+        /* 爱心和星星样式 - 优化满屏效果 */
+        .floating-icon {
+            position: absolute; pointer-events: none;
+            animation: fall 6s linear forwards; /* 延长动画时间，更舒缓 */
+            z-index: 1;
+            text-shadow: 0 0 6px rgba(255, 255, 255, 0.9); /* 加光晕更醒目 */
+        }
+        @keyframes fall {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+            100% { 
+                transform: translate(calc(var(--random-x) * 200px), 120vh) rotate(720deg); /* 扩大飘移范围 */
+                opacity: 0; 
+            }
+        }
+
+        /* 隐藏音频控件，不影响界面 */
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 新增：背景音乐标签 -->
+    <audio id="bgMusic" loop>
+        <source src="C:\Users\i\Desktop\遇到\Yusee西 - 遇到.ogg" type="audio/ogg">
+    </audio>
+
+    <!-- 你原有的图片路径，已保留 -->
+    <img src="happy.jpg" alt="卡通形象" class="cartoon-img" id="cartoonImg">
+    
+    <div class="question-text">可以成为我的恋人吗？</div>
+    
+    <div class="btn-group">
+        <button class="choice-btn agree-btn" id="agreeBtn">可以</button>
+        <button class="choice-btn disagree-btn" id="disagreeBtn">不要</button>
+    </div>
+
+    <script>
+        const cartoonImg = document.getElementById('cartoonImg');
+        const agreeBtn = document.getElementById('agreeBtn');
+        const disagreeBtn = document.getElementById('disagreeBtn');
+        // 新增：获取音乐元素
+        const bgMusic = document.getElementById('bgMusic');
+        // 新增：标记音乐是否已播放（解决浏览器自动播放限制）
+        let isMusicPlayed = false;
+
+        // 你原有的图片路径，已保留
+        const imgSrc = {
+            happy: "happy.jpg",
+            sad: "sad.jpg"
+        };
+        let scaleNum = 1;
+
+        // 点击不要：逻辑不变，保留原有效果
+        disagreeBtn.addEventListener('click', () => {
+            scaleNum += 0.15;
+            agreeBtn.style.setProperty('--scale', scaleNum);
+            cartoonImg.src = imgSrc.sad;
+        });
+
+        // 点击可以：新增音乐播放 + 优化满屏飘动画
+        agreeBtn.addEventListener('click', () => {
+            clearIcons();
+            
+            // 新增：播放背景音乐（处理浏览器自动播放限制）
+            if (!isMusicPlayed) {
+                bgMusic.play().catch(err => {
+                    alert('请点击页面任意位置开启音乐哦～');
+                    document.body.addEventListener('click', () => {
+                        bgMusic.play();
+                        isMusicPlayed = true;
+                    }, { once: true });
+                });
+                isMusicPlayed = true;
+            }
+
+            // 优化：生成100个图标实现满屏效果，分批生成避免卡顿
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => createFloatingIcon(), i * 50);
+            }
+            
+            cartoonImg.src = imgSrc.happy;
+            scaleNum = 1;
+            agreeBtn.style.setProperty('--scale', scaleNum);
+        });
+
+        // 优化：生成浮动图标，增加样式+扩大覆盖范围
+        function createFloatingIcon() {
+            const icon = document.createElement('div');
+            icon.className = 'floating-icon';
+            // 新增：更多浪漫图标（爱心、星星、玫瑰、闪光）
+            const icons = ['❤️', '⭐', '💖', '✨', '🌹', '💘'];
+            icon.innerText = icons[Math.floor(Math.random() * icons.length)];
+            
+            // 优化：随机位置覆盖整个屏幕
+            const startX = Math.random() * window.innerWidth;
+            // 优化：扩大飘移幅度，更有层次感
+            const randomX = (Math.random() - 0.5) * 4; 
+            
+            icon.style.left = `${startX}px`;
+            // 优化：随机顶部起始位置，避免扎堆
+            icon.style.top = `${Math.random() * -100 - 50}px`;
+            icon.style.setProperty('--random-x', randomX);
+            // 优化：随机大小，更自然
+            icon.style.fontSize = `${Math.random() * 20 + 12}px`;
+            // 优化：随机透明度
+            icon.style.opacity = `${Math.random() * 0.7 + 0.3}`;
+            // 新增：随机颜色（爱心偏红，星星偏黄）
+            if (['❤️', '💖', '🌹', '💘'].includes(icon.innerText)) {
+                icon.style.color = `rgb(255, ${Math.floor(Math.random() * 100)}, ${Math.floor(Math.random() * 150)})`;
+            } else {
+                icon.style.color = `rgb(255, 255, ${Math.floor(Math.random() * 100)})`;
+            }
+            
+            document.body.appendChild(icon);
+            // 对应动画时长，延迟移除元素
+            setTimeout(() => icon.remove(), 6000);
+        }
+
+        // 原有方法，保留
+        function clearIcons() {
+            document.querySelectorAll('.floating-icon').forEach(icon => icon.remove());
+        }
+
+        // 新增：解决浏览器自动播放限制，点击页面任意位置可触发音乐
+        document.body.addEventListener('click', () => {
+            if (!isMusicPlayed) {
+                bgMusic.play();
+                isMusicPlayed = true;
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>
